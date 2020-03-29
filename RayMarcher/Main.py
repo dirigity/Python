@@ -16,13 +16,13 @@ from multiprocessing import Pool
 # Sfere,Rad,posX,PosY,Posz
 # Point,PosX,PosY,PosZ,I,r
 # Sun,AngleX,AngleY,I
-SKY = [100,100,100]
-CERO = 0.00001
+SKY = [0,160,250]
+CERO = 0.000001
 INF = 1000000000
 maxSteps = 100
 maxDistance = 1000
 objects=[["Sfere",1,0,0,0],["Sfere",1,0,0,1],["Sfere",1,0,0,2]]
-lights=[["Point",2,1,0,1,0.3]]
+lights=[["Point",2,1,0,0.1,0.3],["Point",2,-1,0,0.1,0.3]]
 
 
 def VectorFromAngle(aX,aY):
@@ -99,9 +99,9 @@ def Ray(cx,cy,cz,Vx,Vy,Vz,bounces):
 
                     
     colorB = colorB * ((1/(StepCounter+1)/50)+1)
-    r = min(250*colorB+SKY[0]*1/StepCounter,250)
-    g = min(250*colorB+SKY[1]*1/StepCounter,250)
-    b = min(250*colorB+SKY[2]*1/StepCounter,250)
+    r = min(250*colorB+SKY[0]*((1/(StepCounter+1)/1000)+1),250)
+    g = min(250*colorB+SKY[1]*((1/(StepCounter+1)/1000)+1),250)
+    b = min(250*colorB+SKY[2]*((1/(StepCounter+1)/1000)+1),250)
     return [r,g,b]
 
 def dotproduct(v1, v2):
