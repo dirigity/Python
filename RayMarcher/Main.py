@@ -1,13 +1,12 @@
 from copy import deepcopy
 import math as m1
-import array
 import numpy as np
 import time
 from PIL import Image
 from multiprocessing import Pool
 
-
-
+import sys
+sys.stdout = open("Out.txt", "w")
 
 
 
@@ -16,13 +15,13 @@ from multiprocessing import Pool
 # Sfere,Rad,posX,PosY,Posz
 # Point,PosX,PosY,PosZ,I,r
 # Sun,AngleX,AngleY,I
-SKY = [0,160,250]
+SKY = [70,70,70]#[0,160,250]
 CERO = 0.000001
 INF = 1000000000
 maxSteps = 100
 maxDistance = 1000
 objects=[["Sfere",1,0,0,0],["Sfere",1,0,0,1],["Sfere",1,0,0,2]]
-lights=[["Point",2,1,0,0.1,0.3],["Point",2,-1,0,0.1,0.3]]
+lights=[["Point",2,1,0,1,0.3]]
 
 
 def VectorFromAngle(aX,aY):
@@ -33,7 +32,10 @@ def VectorFromAngle(aX,aY):
     z=m1.sin(aX)
     return (x,y,z)
 
-def Ray(cx,cy,cz,Vx,Vy,Vz,bounces):
+def Ray(cx,cy,cz,V,bounces):
+    Vx = V[0]
+    Vy = V[1]
+    Vz = V[2]
     x = cx
     y = cy
     z = cz
@@ -119,7 +121,7 @@ def angle(v1, v2):
     return m1.acos(a)
 
 def PointDistance(x1,y1,z1,x2,y2,z2):
-    return m1.sqrt(m1.pow(x1-x2,2)+m1.pow(y1-y2,2)+m1.pow(z1-z2,2))
+    return ((x1-x2)**2 + (y1-y2)**2 + (z1-z2)**2)**.5
 
 def SfereDistance(x,y,z,cx,cy,cz,r):
     return PointDistance(x,y,z,cx,cy,cz)-r
@@ -131,12 +133,8 @@ def NormalEsf(x,y,z,OBJ):
 
 
 def MINdistanceObjLamp(x,y,z,l):
-    a = MINdistance(x,y,z)[0]
-    b = PointDistance(x,y,z,l[1],l[2],l[3])
-    if(a<b):
-        return a
-    else:
-        return b
+    return min(PointDistance(x,y,z,l[1],l[2],l[3]),MINdistance(x,y,z)[0])
+    
 
 def MINdistance(x,y,z):
     rets = distanceList(x,y,z)
@@ -162,19 +160,20 @@ def MAXdistance(x,y,z):
     
     return ret
 
+
 def distanceList(x,y,z):
     rets = []
     for obj in objects:
         if(obj[0]=="Sfere"):
             rets.append(SfereDistance(x,y,z,obj[2],obj[3],obj[4],obj[1]))
+        
     return rets
 
-def render(x,y,z):
+def render(x,y,z,multiProz,w,h):
     StartMillis = int(round(time.time() * 1000))
 
-    w=500  #duplicate
 
-    PreData = [ [b,x,y,z] for b in range(w) ]
+    PreData = [ (b,x,y,z,w,h) for b in range(h) ]
 
 
     #columnN = 0
@@ -190,38 +189,52 @@ def render(x,y,z):
     #        elementN = elementN+1
     #    columnN = columnN+1
 
-    p = Pool(4)
-    data = p.map(threadRay, PreData)
+    if multiProz:
+        p = Pool(4)
+        data = p.map(threadRay, PreData)
+    else:
+        data = [ threadRay(Line) for Line in PreData]
+
+
+
     
     EndMillis = int(round(time.time() * 1000))
     print(EndMillis-StartMillis)
     img = Image.fromarray(np.asarray(data,dtype=np.uint8), 'RGB' )
 
     return img
-
+# 0 1 2 3 4 5
+#(b,x,y,z,w,h)
 def threadRay(d):
-    ret = []
-    w=500 #duplicate
-    sensorL = 5 
+    w=d[4]
+    h=d[5]
+    antires = 1/100
+    sensorW = antires * w
+    sensorH = antires * h
 
     columnN = d[0]
     x,y,z = d[1],d[2],d[3]
 
-    elementN = 0
-    for element in range(w):
-        Vx = -1
-        Vy = (columnN/w*sensorL)-sensorL/2
-        Vz = (elementN/w*sensorL)-sensorL/2
-        d = PointDistance(Vx,Vy,Vz,0,0,0)
-        ret.append(Ray(x,y,z,Vx/d,Vy/d,Vz/d,0))
-        elementN = elementN+1
-    return ret
+    #ret = []
+    
+    #elementN = 0
+    #for element in range(w):
+    #    Vx = -1
+    #    Vy = ((columnN/h)*sensorH)-(sensorH/2)
+    #    Vz = ((elementN/w)*sensorW)-(sensorW/2)
+    #    ret.append(Ray(x,y,z,normalice(Vx,Vy,Vz),0))
+    #    elementN = elementN+1
 
+    return [ Ray(x,y,z,normalice(-1,((columnN/h)*sensorH)-(sensorH/2),((elementN/w)*sensorW)-(sensorW/2)),0) for elementN in range(w)]
 
+def normalice(x,y,z):
+    l = PointDistance(0,0,0,x,y,z)
+    return (x/l,y/l,z/l)
 
 def main():
-
-    img = render(2,0,0)
+    aspectRatio = (16,9)
+    m = 20
+    img = render(2,0,0,False,aspectRatio[0]*m,aspectRatio[1]*m)
     img.save('render.png')
 
     img.show()
