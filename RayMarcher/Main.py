@@ -123,8 +123,7 @@ def angle(v1, v2):
 def PointDistance(x1,y1,z1,x2,y2,z2):
     return ((x1-x2)**2 + (y1-y2)**2 + (z1-z2)**2)**.5
 
-def SfereDistance(x,y,z,cx,cy,cz,r):
-    return PointDistance(x,y,z,cx,cy,cz)-r
+
 
 def NormalEsf(x,y,z,OBJ):
     # Sfere,Rad,posX,PosY,Posz
@@ -160,14 +159,15 @@ def MAXdistance(x,y,z):
     
     return ret
 
+def distanceTo(obj,x,y,z):
+    if(obj[0]=="Sfere"):
+        return (PointDistance(x,y,z,obj[2],obj[3],obj[4])-obj[1])
+    return INF
+
 
 def distanceList(x,y,z):
-    rets = []
-    for obj in objects:
-        if(obj[0]=="Sfere"):
-            rets.append(SfereDistance(x,y,z,obj[2],obj[3],obj[4],obj[1]))
-        
-    return rets
+     
+    return [distanceTo(obj,x,y,z) for obj in objects]
 
 def render(x,y,z,multiProz,w,h):
     StartMillis = int(round(time.time() * 1000))
