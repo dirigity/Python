@@ -5,7 +5,9 @@ import time
 from PIL import Image
 from multiprocessing import Pool
 
-import sys
+
+#import sys
+#sys.stdout = open("Out.txt", "w")
 
 
 
@@ -16,14 +18,14 @@ import sys
 
 
 # Point,PosX,PosY,PosZ,rad,R,G,B,Bri
-# Sun,AngleX,AngleY,I
-SKY = [70,70,70]##[0,160,250]
+# Sun,AngleX,AngleY,R,G,B,I
+SKY = [70,70,70]
 CERO = 0.000001
 INF = 1000000000
 maxSteps = 1000
 maxDistance = 1000
-objects=[["Sfere",1,0,0,0,255,100,255,1],["Cube",(1,1,10),0,-1,0,100,255,255,1],["Sfere",1,0,0,2,255,255,100,1]]
-lights=[["Point",-2,1,0,0.3,255,255,255,3]]
+objects=[["Cube",(100,0.1,100),0,-0.5,0,100,255,255,1],["Cube",(1,1,1),0,0,1,255,255,100,1],["Sfere",1,0,0.7,-1,100,255,100,1],["Sfere",1,0,0,-1,255,100,255,1]]#
+lights=[["Point",-2,3,-0.3,0.3,255,255,255,1.4],["Point",1,2,1,0.3,255,255,255,0.2],["Sun",(1,1,1),255,255,255,0.3]]
 
 
 def VectorFromAngle(aX,aY):
@@ -32,7 +34,7 @@ def VectorFromAngle(aX,aY):
     x=m1.cos(aX)*m1.sin(aY)
     y=m1.cos(aX)*m1.cos(aY)
     z=m1.sin(aX)
-    return (x,y,z)
+    return normalize(x,y,z)
 
 def Ray(cx,cy,cz,dir,bounces):
     x = cx
@@ -72,6 +74,37 @@ def Ray(cx,cy,cz,dir,bounces):
         #ir a luces
         for lam in lights:
             V = [0,0,1]
+            if(lam[0]=="Sun"):# Sun,V,R,G,B,I
+
+
+                V = lam[1]
+                intensityR = lam[2]
+                intensityG = lam[3]
+                intensityB = lam[4]
+                brightness = lam[5]
+            
+                hit = False
+                ilum = False
+                lx = x + V[0] * 0.01
+                ly = y + V[1] * 0.01
+                lz = z + V[2] * 0.01
+
+                while not hit and not ilum:
+                    d = MINdistance(lx,ly,lz)[0]
+
+                    lx = lx + V[0]*d
+                    ly = ly + V[1]*d
+                    lz = lz + V[2]*d
+
+                    if d<CERO :
+                        hit = True
+                    elif PointDistance(lx,ly,lz,cx,cy,cz)>maxDistance :
+                        ilum = True
+                        colorR = colorR + SurfaceR*abs(intensityR*brightness * m1.cos(angle(V,Normal(x,y,z,OBJ)))) 
+                        
+                        colorG = colorG + SurfaceG*abs(intensityG*brightness * m1.cos(angle(V,Normal(x,y,z,OBJ)))) 
+
+                        colorB = colorB + SurfaceB*abs(intensityB*brightness * m1.cos(angle(V,Normal(x,y,z,OBJ)))) 
 
             if(lam[0]=="Point"):
                 vx = -(x-lam[1])
@@ -143,6 +176,8 @@ def length(v):
     return (dotproduct(v, v))**.5
 
 def angle(v1, v2):
+    if(length(v1) * length(v2)==0):
+        print(v1,v2)
     a = dotproduct(v1, v2) / (length(v1) * length(v2))
     if(a<-1):
         a = -1
@@ -173,20 +208,25 @@ def Normal(x,y,z,OBJ):
         vy = 0
         vz = 0
 
-        if(rX>1):
+        margin = 0.0001
+
+        if(rX>=1-margin):
             vx = 1
-        elif(rX<-1):
+        elif(rX<=-1+margin):
             vx = -1
         
-        if(rY>1):
+        if(rY>=1-margin):
             vy = 1
-        elif(rY<-1):
+        elif(rY<=-1+margin):
             vy = -1
         
-        if(rZ>1):
+        if(rZ>=1-margin):
             vz = 1
-        elif(rZ<-1):
+        elif(rZ<=-1+margin):
             vz = -1
+        
+        if(vx == 0 and vy == 0 and vz == 0):
+            print(OBJ,x,y,z,rX,rY,rZ)
         
         return (vx,vy,vz)
 
@@ -222,17 +262,16 @@ def MAXdistance(x,y,z):
 
 def distanceTo(obj,x,y,z):
     if(obj[0]=="Sfere"):
-
         return PointDistance(x,y,z,obj[2],obj[3],obj[4])-(obj[1]/2)
     if(obj[0]=="Cube"):
         #max{0,|x|−1}^2+max{0,|y|−1}^2+max{0,|z|−1}^2
         s = obj[1]
-        rX = (x-obj[2])/(s[0]/2)
-        rY = (y-obj[3])/(s[1]/2)
-        rZ = (z-obj[4])/(s[2]/2)
-        pX = max(0,abs(rX)-1)
-        pY = max(0,abs(rY)-1)
-        pZ = max(0,abs(rZ)-1)
+        rX = (x-obj[2])
+        rY = (y-obj[3])
+        rZ = (z-obj[4])
+        pX = max(0,abs(rX)-(s[0]/2))
+        pY = max(0,abs(rY)-(s[1]/2))
+        pZ = max(0,abs(rZ)-(s[2]/2))
         return PointDistance(0,0,0,pX,pY,pZ)
 
     return INF
@@ -278,10 +317,10 @@ def render(x,y,z,multiProz,w,h):
 # 0 1 2 3 4 5
 #(b,x,y,z,w,h)
 def threadRay(d):
-    
+    print(d)
     w=d[4]
     h=d[5]
-    antires = 1/100
+    antires = 1/1000
     sensorW = antires * w
     sensorH = antires * h
 
@@ -298,7 +337,11 @@ def threadRay(d):
     #    ret.append(Ray(x,y,z,normalize(Vx,Vy,Vz),0))
     #    elementN = elementN+1
 
-    return [ Ray(x,y,z,normalize(-1,((columnN/-h)*sensorH)+(sensorH/2),((elementN/w)*sensorW)-(sensorW/2)),0) for elementN in range(w)]
+    aX = 0
+    aY = 0
+    aZ = 0.5
+
+    return [ Ray(x,y,z,rotateVAngleXYZ(normalize(-1,((columnN/-h)*sensorH)+(sensorH/2),((elementN/w)*sensorW)-(sensorW/2)),aX,aY,aZ),0) for elementN in range(w)]
 
 def normalize(x,y,z):
     l = PointDistance(0,0,0,x,y,z)
@@ -311,13 +354,33 @@ def normalizeTuple(V):
     l = PointDistance(0,0,0,x,y,z)
     return (x/l,y/l,z/l)
 
+def rotateVAngleXYZ(v,aX,aY,aZ):
+    return np.dot(rotation_matrix((0,0,1), aZ), np.dot(rotation_matrix((0,1,0), aY), np.dot(rotation_matrix((1,0,0), aX), v)))
+
+def rotation_matrix(axis, theta):
+    """
+    Return the rotation matrix associated with counterclockwise rotation about
+    the given axis by theta radians.
+    """
+    axis = np.asarray(axis)
+    axis = axis / m1.sqrt(np.dot(axis, axis))
+    a = m1.cos(theta / 2.0)
+    b, c, d = -axis * m1.sin(theta / 2.0)
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
+
 def main():
     aspectRatio = (16,9)
-    m = 20
-    img = render(2,0,0,False,aspectRatio[0]*m,aspectRatio[1]*m)
-    sys.stdout = open("Out.txt", "w")
+    m = 100
+    img = render(5,3,0,True,aspectRatio[0]*m,aspectRatio[1]*m)
     img.save('render.png')
 
     img.show()
+
+
+
 
 main()
