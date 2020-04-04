@@ -54,17 +54,17 @@ def main():
     Height = normaliceArr(noiseArr())
     OriginalLevel = Height # Used for takin into acount the top soil level in terrain solubility
 
-    itterations = 1000 # number of rain droplets to simulate
+    itterations = 100 # number of rain droplets to simulate
 
     I = 0
     while(I<itterations):
         #create droplet at random place
         DropX = random.randint(0,shape[0])%shape[0]
         DropY = random.randint(0,shape[1])%shape[1]
-        waterContent = 1 # one Water content can disolve one Soil content && one water content will be removed from the droplet one each 1/EvaporationRate steps
+        waterContent = 100 # one Water content can disolve one Soil content && one water content will be removed from the droplet one each 1/EvaporationRate steps
         SoilContent = 0
         while (waterContent>0):
-
+            #print (SoilContent,waterContent)
             #put in the ground if saturated
             if SoilContent > waterContent:
                 Height[DropX][DropY] = Height[DropX][DropY]+(SoilContent-waterContent)
@@ -113,7 +113,7 @@ def normaliceArr (arr):
         for e in row:
             v.append(e)
     Min = min(v)
-    Max = max(v)+0.01
+    Max = max(v)
     print(Min,Max)
     return np.array([ [ (2**16)*((e-Min)/(Max-Min)) for e in row ] for row in arr]).astype(np.uint32)
 
