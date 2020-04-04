@@ -11,8 +11,8 @@ scale = 400.0
 octaves = 4
 persistence = 0.5
 lacunarity = 2.0
-DisolveConstant = 9 # Should be betwen 0 and 1
-EvaporationRate = 1 # bigger than 0
+DisolveConstant = 1/10 # Should be betwen 0 and 1 highter makes deeper trenches as drops walk
+EvaporationRate = 0.2 # bigger than 0
 
 def noiseArr():
     n = 0
@@ -51,17 +51,17 @@ def findSlope(x,y,map):
 
 def main():
 
-    Height = normaliceArr(noiseArr())
+    Height = normaliceArr(noiseArr(),100)
     OriginalLevel = Height # Used for takin into acount the top soil level in terrain solubility
 
-    itterations = 100 # number of rain droplets to simulate
+    itterations = 100000 # number of rain droplets to simulate
 
     I = 0
     while(I<itterations):
         #create droplet at random place
         DropX = random.randint(0,shape[0])%shape[0]
         DropY = random.randint(0,shape[1])%shape[1]
-        waterContent = 100 # one Water content can disolve one Soil content && one water content will be removed from the droplet one each 1/EvaporationRate steps
+        waterContent = 300 # one Water content can disolve one Soil content && one water content will be removed from the droplet one each 1/EvaporationRate steps
         SoilContent = 0
         while (waterContent>0):
             #print (SoilContent,waterContent)
@@ -73,6 +73,7 @@ def main():
             nextPos = findSlope(DropX,DropY,Height)
             NextX=nextPos[0]
             NextY=nextPos[1]
+            #print(DropX,DropY,NextX,NextY)
 
             #take from the ground if not saturated
 
@@ -81,20 +82,19 @@ def main():
                 maximum = Height[DropX][DropY] - Height[NextX][NextY]
                         
                 residue = DisolveConstant*maximum*solubility
-
-                #print(DropX,DropY,NextX,NextY,residue)
+                #print("residue:"+str(residue))
                 #print(Height[DropX][DropY])
                 Height[DropX][DropY] = Height[DropX][DropY] - residue
                 #print(Height[DropX][DropY] - residue)
                 SoilContent = SoilContent + residue
             #evaporate
-            waterContent = waterContent - (EvaporationRate*max(((DropX-NextX)**2+(DropY-NextY)**2)**.5,0.1))
+            waterContent = waterContent - (EvaporationRate*max(((DropX-NextX)**2+(DropY-NextY)**2)**.5,1))
 
             #step
             DropX = NextX
             DropY = NextY
             
-        if(I%(itterations/10)==0):
+        if(I%(itterations/1000)==0):
             print(I/itterations)
             d = 10
             if(I%(itterations/d)==0):
@@ -107,7 +107,7 @@ def main():
     imageFromHeight(Height,"Final")
     imageFromHeight(DiferenceMap,"Difference")
 
-def normaliceArr (arr):
+def normaliceArr (arr,NewMax):
     v = []
     for row  in arr:
         for e in row:
@@ -115,12 +115,12 @@ def normaliceArr (arr):
     Min = min(v)
     Max = max(v)
     print(Min,Max)
-    return np.array([ [ (2**16)*((e-Min)/(Max-Min)) for e in row ] for row in arr]).astype(np.uint32)
+    return np.array([ [ NewMax*((e-Min)/(Max-Min)) for e in row ] for row in arr])
 
 def imageFromHeight(Height,tag):
     #Normalice and convert to image (as we only hace 256 posible hight states we normalice to get the maximum detail out of them)
 
-    NormData = normaliceArr(Height)
+    NormData = normaliceArr(Height,2**16).astype(np.uint32)
     # Convert to image
     im = Image.fromarray(NormData)
     im.save("render"+str(tag)+".png")
