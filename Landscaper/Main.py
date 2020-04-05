@@ -68,7 +68,7 @@ def fBm(x, y, per, octs):
 
 
 
-def findSlope(x,y,map):
+def findSlope(x,y,map,OriginalLevel):
     rets = [
     [(x-1)  %size,(y-1) %size],
     [x      %size,(y-1) %size],
@@ -81,7 +81,7 @@ def findSlope(x,y,map):
     ]
     ret = [x%size,y%size]
     for pos in rets:
-        if (map[pos[0]][pos[1]]) < (map[ret[0]][ret[1]]):
+        if 10*OriginalLevel[pos[0]][pos[1]]+map[pos[0]][pos[1]] < 10*OriginalLevel[ret[0]][ret[1]]+map[ret[0]][ret[1]]:
             ret = pos
 
     return ret
@@ -112,7 +112,7 @@ def main():
                 Height[DropX][DropY] = Height[DropX][DropY]+(SoilContent-waterContent)
                 SoilContent = waterContent
 
-            nextPos = findSlope(DropX,DropY,Height)
+            nextPos = findSlope(DropX,DropY,Height,OriginalLevel)
             NextX=nextPos[0]
             NextY=nextPos[1]
             #print(DropX,DropY,NextX,NextY)
