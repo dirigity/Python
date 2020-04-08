@@ -51,7 +51,7 @@ def main():
     Height = normaliceArr(Height,100)
     OriginalLevel = copy.deepcopy(Height) # Used for takin into acount the top soil level in terrain solubility
 
-    itterations = 100 # number of rain droplets to simulate
+    itterations = 10000 # number of rain droplets to simulate
     print("Starting Erosion")
 
     I = 0
