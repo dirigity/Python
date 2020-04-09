@@ -4,6 +4,7 @@ from itertools import product
 import math
 import random
 
+random.seed(a=None)
 
 def smoothstep(t):
     """Smooth curve with a zero derivative at 0 and 1, making it useful for
