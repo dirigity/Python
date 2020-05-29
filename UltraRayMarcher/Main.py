@@ -10,7 +10,7 @@ import time
 
 
 import sys
-sys.stdout = open("Out.txt", "w")
+
 
 _EmptySceneData = []
 _SceneContents = []
@@ -19,6 +19,14 @@ _SceneIlumination = []
 Sky = [70,70,70]
 CERO = 0.01
 MaxDistance = 100
+
+class OBJ:
+    def __init__(self,_type,_Data):
+        if _type == "Sfere":
+            self.type = "Sfere"
+            self.R,self.Col = _Data
+        
+
 
 class Point:
     def __init__(self,X_,Y_,Z_):
@@ -361,8 +369,6 @@ def Main():
                 pxArr = pygame.PixelArray(screen)
                 pygame.display.flip()
         
-        Casillero = [[False for y in range(size[1])] for x in range(size[0])]
-
         sideLenght = 0
 
         zoom = 3
@@ -384,6 +390,7 @@ def Main():
                 CreateRay(zoom,size,pxArr,CameraPos,ScreenSpacePoint)
 
             sideLenght +=1
+
         print("tick")
         EndMilis = time.time()
 
@@ -396,20 +403,22 @@ def Main():
 _Trail = 0
 
 def CreateRay(zoom,size,SurfaceArr,CPos,SSPos):
-    global _Trail
-    _Trail=(_Trail+1)%250
+    
     #print(SSPos)
     if SSPos[0]<=size[0]-1 and SSPos[1]<=size[1]-1 and SSPos[0]>=0 and SSPos[1]>=0:
-        V = Vector(1,zoom*SSPos[0]/min(size),zoom*SSPos[1]/min(size))
-        color = (_Trail,_Trail,_Trail)#LaunchRay(CPos,V,0)
-        pixel(SurfaceArr,color,SSPos)
+        global _Trail
+        _Trail=(_Trail+10)%250
+        minSize = min(size)
+        V = Vector(1,zoom*SSPos[0]/minSize,zoom*SSPos[1]/minSize)
+        SurfaceArr[SSPos[0]][SSPos[1]] = LaunchRay(CPos,V,0)
     
 
 
-def pixel(surfaceArr, color, pos):
-    surfaceArr[pos[0]][pos[1]] = color
+    
 
 
 
 
 Main()
+
+sys.stdout = open("Out.txt", "w")

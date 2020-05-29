@@ -122,7 +122,7 @@ def ForceTo(i,Boid):
 
 
 def forceFromDistance(x):
-    ret = math.log10(abs(x))
+    ret = math.log10(abs(x+1))
     if(x>0):
         return ret
     return -ret

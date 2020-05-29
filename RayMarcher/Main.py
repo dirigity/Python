@@ -319,7 +319,7 @@ def threadRay(d):
     print(d)
     w=d[4]
     h=d[5]
-    antires = 1/1000
+    antires = 1/100
     sensorW = antires * w
     sensorH = antires * h
 
@@ -373,7 +373,7 @@ def rotation_matrix(axis, theta):
 
 def main():
     aspectRatio = (16,9)
-    m = 100
+    m = 10
     img = render(5,3,0,True,aspectRatio[0]*m,aspectRatio[1]*m)
     img.save('render.png')
 
